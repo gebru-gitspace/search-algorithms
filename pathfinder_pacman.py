@@ -17,7 +17,7 @@ Controls:
  - 2: select DFS
  - 3: select A*
  - 4: select UCS
- - Space: run/step the selected algorithm
+ - Space: step the selected algorithm (one expansion)
  - A: toggle auto-run (continuous)
  - R: reset grid (clear walls, start/goal remain)
  - + / - : speed up / slow down visualization
@@ -52,6 +52,8 @@ COLOR_EXPLORED = (180, 180, 180)
 COLOR_PATH = (240, 240, 100)
 COLOR_TEXT = (230, 230, 230)
 COLOR_AGENT = (255, 200, 50)
+COLOR_AUTO_ON = (100, 255, 100)
+COLOR_AUTO_OFF = (255, 100, 100)
 
 # --------------------------------------------------
 
@@ -241,14 +243,20 @@ def draw_grid(screen, walls, start, goal, frontier, explored, path, current, fon
 
     # Text info
     info_lines = [
-        f"Algo: {alg_name}    Speed: {speed:.2f}s step    Auto: {'ON' if auto_mode else 'OFF'}",
+        f"Algo: {alg_name}    Speed: {speed:.2f}s step",
         "Controls: Left-click toggle wall | S then click: set Start | G then click: set Goal",
-        "1:BFS  2:DFS  3:A*  4:UCS   Space: step/run   A: toggle auto-run   R: reset",
+        "1:BFS  2:DFS  3:A*  4:UCS   Space: step   A: toggle auto-run   R: reset",
         "+ / - : faster/slower"
     ]
     for i, line in enumerate(info_lines):
         surf = font.render(line, True, COLOR_TEXT)
         screen.blit(surf, (MARGIN, MARGIN + GRID_ROWS*CELL_SIZE + 10 + i*20))
+
+    # Auto-run indicator (clear and visible)
+    auto_text = "AUTO: ON" if auto_mode else "AUTO: OFF"
+    auto_color = COLOR_AUTO_ON if auto_mode else COLOR_AUTO_OFF
+    surf2 = font.render(auto_text, True, auto_color)
+    screen.blit(surf2, (MARGIN + 450, MARGIN + GRID_ROWS*CELL_SIZE + 10))
 
     pygame.display.flip()
 
@@ -266,14 +274,13 @@ def main():
     walls = set()
     start = (1, 1)
     goal = (GRID_COLS-2, GRID_ROWS-2)
-    selected_alg = 'BFS'  # options: BFS, DFS, ASTAR, UCS
+    selected_alg = 'BFS'  # options: BFS, DFS, A*, UCS
     algo_gen = None
     frontier = []
     explored = set()
     path = []
     current = None
     auto_mode = False
-    stepping = False
     speed = 0.05  # seconds between automatic steps
 
     waiting_for_set = None  # 'S' or 'G' for next click
@@ -284,6 +291,7 @@ def main():
     running = True
     while running:
         now = time.time()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -314,8 +322,10 @@ def main():
                 if event.key == pygame.K_4:
                     selected_alg = 'UCS'
                     algo_gen = None
+
+                # Manual single-step (Space): do exactly one expansion step
                 if event.key == pygame.K_SPACE:
-                    # Start or step the generator
+                    # If there is no active generator, create one
                     if algo_gen is None:
                         if start is None or goal is None:
                             print("Set start and goal first.")
@@ -332,11 +342,61 @@ def main():
                                 algo_gen = astar(start, goal, walls)
                             elif selected_alg == 'UCS':
                                 algo_gen = ucs(start, goal, walls)
-                            stepping = True
+                            # Immediately perform one step
+                            try:
+                                result = next(algo_gen)
+                            except StopIteration:
+                                algo_gen = None
+                                result = None
+                            if result:
+                                if result.get('status') == 'searching':
+                                    frontier = result.get('frontier', frontier)
+                                    explored = result.get('explored', explored)
+                                    current = result.get('current', current)
+                                    path = []
+                                elif result.get('status') == 'found':
+                                    path = result.get('path', [])
+                                    algo_gen = None
+                                    frontier = []
+                                    explored = set()
+                                    current = None
+                                elif result.get('status') == 'no_path':
+                                    print("No path found.")
+                                    algo_gen = None
+                                    frontier = []
+                                    explored = set()
+                                    current = None
                     else:
-                        stepping = True
+                        # active generator exists -> perform exactly one next step
+                        try:
+                            result = next(algo_gen)
+                        except StopIteration:
+                            algo_gen = None
+                            result = None
+                        if result:
+                            if result.get('status') == 'searching':
+                                frontier = result.get('frontier', frontier)
+                                explored = result.get('explored', explored)
+                                current = result.get('current', current)
+                                path = []
+                            elif result.get('status') == 'found':
+                                path = result.get('path', [])
+                                algo_gen = None
+                                frontier = []
+                                explored = set()
+                                current = None
+                            elif result.get('status') == 'no_path':
+                                print("No path found.")
+                                algo_gen = None
+                                frontier = []
+                                explored = set()
+                                current = None
+
+                # Toggle auto-run: continuous stepping at 'speed' interval
                 if event.key == pygame.K_a:
                     auto_mode = not auto_mode
+                    print("Auto-Run:", "ON" if auto_mode else "OFF")
+
                 if event.key == pygame.K_PLUS or event.key == pygame.K_EQUALS:
                     speed = max(0.01, speed * 0.7)
                 if event.key == pygame.K_MINUS:
@@ -367,8 +427,9 @@ def main():
                                 walls.add(cell)
                         algo_gen = None
 
-        # Step the algorithm generator if active and stepping/auto and time passed
-        if algo_gen is not None and (stepping or auto_mode):
+        # Auto-run execution: only when auto_mode is True
+        if algo_gen is not None and auto_mode:
+            # step according to speed timing
             if now - last_step_time >= speed:
                 last_step_time = now
                 try:
@@ -381,21 +442,17 @@ def main():
                         path = []
                     elif result.get('status') == 'found':
                         path = result.get('path', [])
-                        # stop stepping
-                        stepping = False
                         algo_gen = None
                         frontier = []
                         explored = set()
                         current = None
                     elif result.get('status') == 'no_path':
                         print("No path found.")
-                        stepping = False
                         algo_gen = None
                         frontier = []
                         explored = set()
                         current = None
                 except StopIteration:
-                    stepping = False
                     algo_gen = None
 
         # draw
