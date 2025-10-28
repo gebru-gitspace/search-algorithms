@@ -1,0 +1,99 @@
+# 🧭 Pacman Pathfinding & AI Search Visualizer
+
+A Python-based **AI search and game decision-making project** built with `pygame`, featuring:
+
+- **Pathfinding Algorithms**: BFS, DFS, UCS (Dijkstra), A*  
+- **Adversarial Search**: Minimax and Alpha–Beta Pruning  
+- Interactive **Pacman-style grid environment** for visualization.
+
+---
+
+## 🎮 Features
+
+### 🟨 Pathfinding Algorithms
+The environment visualizes how each algorithm explores and finds paths on a grid with obstacles.
+
+| Algorithm | Description | Guarantees Shortest Path? | Uses Heuristic? |
+|------------|--------------|----------------------------|------------------|
+| **BFS (Breadth-First Search)** | Explores level by level using a queue (FIFO). | ✅ (equal costs) | ❌ |
+| **DFS (Depth-First Search)** | Explores as deep as possible using a stack (LIFO). | ❌ | ❌ |
+| **UCS (Uniform Cost Search)** | Dijkstra’s algorithm using total path cost. | ✅ | ❌ |
+| **A\*** | Combines UCS + heuristic (Manhattan). | ✅ (admissible heuristic) | ✅ |
+
+### 🟥 Minimax + Alpha–Beta Pruning
+Implements a **two-player adversarial search** where:
+- The **Max** player tries to maximize the score (Pacman),
+- The **Min** player (ghost/adversary) tries to minimize it.
+
+The **Alpha–Beta Pruning** version optimizes Minimax by cutting off branches that won’t affect the final decision, reducing computation time without changing the result.
+
+---
+
+## 🧠 Algorithms Overview
+
+### 🔹 Breadth-First Search (BFS)
+- Uses a queue to explore all neighbors first.
+- Guarantees shortest path (in terms of steps).
+- Good for small, uniform-cost grids.
+
+### 🔹 Depth-First Search (DFS)
+- Uses a stack to explore deeply first.
+- Does **not** guarantee the shortest path.
+- Fast but can go down long dead ends.
+
+### 🔹 Uniform Cost Search (UCS)
+- Expands paths by **lowest cumulative cost**.
+- Equivalent to Dijkstra’s Algorithm.
+- Optimal for varying step costs.
+
+### 🔹 A\* Search
+- Uses `f(n) = g(n) + h(n)` where  
+  `g(n)` = cost from start  
+  `h(n)` = heuristic estimate to goal.
+- **Manhattan distance** used as heuristic.
+- Much faster than UCS with good heuristics.
+
+### 🔹 Minimax
+- Simulates all possible game states assuming an **optimal opponent**.
+- Alternates turns between maximizing and minimizing players.
+- Evaluates leaf states with a scoring function.
+
+### 🔹 Alpha–Beta Pruning
+- Optimization over Minimax.
+- Prunes (skips) parts of the search tree that can’t affect the result.
+- Reduces time complexity from **O(b^d)** to **O(b^(d/2))** in ideal cases.
+
+---
+
+## 🧩 Controls (Pacman Visualizer)
+
+| Action | Key / Mouse |
+|--------|--------------|
+| 🧱 Toggle wall | Left-click |
+| 🟩 Set Start | Press `S`, then click |
+| 🟥 Set Goal | Press `G`, then click |
+| 🔁 Reset walls | `R` |
+| ▶️ Run / Step | `Space` |
+| ⚙️ Toggle Auto-run | `A` |
+| ⚡ Speed Up / Slow Down | `+` / `-` |
+| 🔢 Select Algorithm | `1` BFS / `2` DFS / `3` A* / `4` UCS |
+
+---
+
+## 🧰 Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/gebru-gitspace/search-algorithms.git
+   ```
+
+---
+
+## 🧰 MiniMax Example
+
+          MAX
+         /   \
+       MIN   MIN
+      / | \   / \
+     3  5  2  9  12
+
