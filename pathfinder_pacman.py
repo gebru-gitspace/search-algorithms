@@ -26,6 +26,11 @@ Requires: pygame
     pip install pygame
 Run:
     python pathfinder_pacman.py
+    
+
+Oct 2025
+Gebru
+
 """
 import pygame
 import sys
