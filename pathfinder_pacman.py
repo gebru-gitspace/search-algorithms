@@ -1,7 +1,4 @@
-#!/usr/bin/env python3
 """
-pathfinder_pacman.py
-
 A simple pygame grid environment (Pacman-style top-down view) that
 lets you draw walls and run pathfinding algorithms:
  - BFS
@@ -23,9 +20,6 @@ Controls:
  - + / - : speed up / slow down visualization
 
 Requires: pygame
-    pip install pygame
-Run:
-    python pathfinder_pacman.py
     
 
 Oct 2025
